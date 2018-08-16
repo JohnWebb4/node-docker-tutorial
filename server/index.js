@@ -2,7 +2,7 @@
 const redis = require('redis');
 const express = require('express');
 
-const client = redis.createClient();
+const client = redis.createClient(6379, 'redis');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -21,17 +21,21 @@ client.set('count', 0, redis.print);
 
 // Handle server
 app.get('/', (req, res) => {
-  client.get('count', (err, value) => {
+  console.log('Received Knock');
+
+  const connected = client.get('count', (err, value) => {
     if (err) {
       console.log(`Error: ${err}`);
-      res.send('');
-      return;
     }
 
+    // value is undefined if error
+    client.incr('count', redis.print);
     res.send(`Knock ${value}`);
   });
 
-  client.incr('count', redis.print);
+  if (!connected) {
+    res.send('Knock, but no Redis');
+  }
 });
 
 app.listen(PORT, () => {
